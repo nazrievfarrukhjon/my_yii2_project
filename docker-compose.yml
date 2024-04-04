@@ -1,0 +1,49 @@
+version: '3'
+services:
+
+  php_my_yii2_project:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    container_name: php_my_yii2_project
+    volumes:
+      - ./:/var/www/html/my_yii2_project
+      - ./docker/xdebug/90-xdebug.ini:/usr/local/etc/php/conf.d/90-xdebug.ini
+    working_dir: /var/www/html/my_yii2_project
+    networks:
+      - my_yii2_project_network
+
+  nginx_my_yii2_project:
+    image: nginx:latest
+    container_name: nginx_my_yii2_project
+    ports:
+      - "8003:80"
+    volumes:
+      - ./:/var/www/html/my_yii2_project
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - my_yii2_project_network
+
+  postgresql_my_yii2_project:
+    build:
+      context: ./docker/db_conf
+      dockerfile: Dockerfile
+    container_name: postgresql_my_yii2_project
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=my_yii2_project_db
+    restart: unless-stopped
+    volumes:
+      - ./docker/pg_data:/var/lib/postgresql/data
+    tty: true
+    networks:
+      - my_yii2_project_network
+
+networks:
+  my_yii2_project_network:
+    external: true
